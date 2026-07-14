@@ -1,48 +1,51 @@
-import { useState } from "react";
+import { Link, NavLink } from "react-router-dom";
 
-const navItems = ["Home", "About Us", "AI Assistant", "Session", "Contact Us"];
+const navItems = [
+  { name: "Home", path: "/" },
+  { name: "About Us", path: "/about" },
+  { name: "AI Assistant", path: "/ai-assistant" },
+  { name: "Session", path: "/session" },
+  { name: "Contact Us", path: "/contact" },
+];
 
 export default function Navbar() {
-  const [active, setActive] = useState(2);
-
   return (
     <nav className="w-full py-6">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-8">
         {/* Logo */}
-        <button className="rounded-2xl bg-black px-8 py-3 font-bold text-yellow-400">
+        <Link
+          to="/"
+          className="rounded-2xl bg-black px-8 py-3 font-bold text-yellow-400"
+        >
           LOGO
-        </button>
+        </Link>
 
         {/* Menu */}
-        <div className="relative flex rounded-2xl bg-[#555] p-2">
-          {/* Active Background */}
-          <div
-            className="absolute top-2 bottom-2 rounded-xl bg-[#2f2f2f] shadow-lg transition-all duration-300 ease-in-out"
-            style={{
-              width: "120px",
-              left: `${8 + active * 120}px`,
-            }}
-          />
-
-          {navItems.map((item, index) => (
-            <button
-              key={item}
-              onClick={() => setActive(index)}
-              className={`relative z-10 w-[120px] rounded-xl py-2 text-sm font-medium transition-colors duration-300 ${
-                active === index
-                  ? "text-yellow-400"
-                  : "text-white hover:text-yellow-300"
-              }`}
+        <div className="flex rounded-2xl bg-[#555] p-2">
+          {navItems.map((item) => (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              className={({ isActive }) =>
+                `rounded-xl px-6 py-2 text-sm font-medium transition-all duration-300 ${
+                  isActive
+                    ? "bg-[#2f2f2f] text-yellow-400 shadow-lg"
+                    : "text-white hover:text-yellow-300"
+                }`
+              }
             >
-              {item}
-            </button>
+              {item.name}
+            </NavLink>
           ))}
         </div>
 
         {/* Sign In */}
-        <button className="rounded-2xl bg-black px-8 py-3 font-semibold text-white">
+        <Link
+          to="/login"
+          className="rounded-2xl bg-black px-8 py-3 font-semibold text-white transition hover:bg-gray-800"
+        >
           SIGN IN
-        </button>
+        </Link>
       </div>
     </nav>
   );

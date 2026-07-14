@@ -1,21 +1,12 @@
-import react from "react";
-import Navbar from "./components/Navbar";
-import ExerciseCarousel from "./components/ExerciseCarousel";
-import exercises from "./data/exercises";
-import { useState } from "react";
+import { Routes, Route } from "react-router-dom";
+import HomePage from "./pages/HomePage";
+import AIAssistantPage from "./pages/AIAssistantPage";
 
-function App() {
-  const [selectedExercise, setSelectedExercise] = useState(exercises[0]);
+export default function App() {
   return (
-    <div>
-      <Navbar />
-      <ExerciseCarousel
-        exercises={exercises}
-        selectedExercise={selectedExercise}
-        onSelect={setSelectedExercise}
-      />
-    </div>
+    <Routes>
+      <Route path="/" element={<HomePage />} />
+      <Route path="/ai-assistant" element={<AIAssistantPage />} />
+    </Routes>
   );
 }
-
-export default App;
