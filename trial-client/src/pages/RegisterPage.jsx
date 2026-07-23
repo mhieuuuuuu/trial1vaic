@@ -94,6 +94,7 @@ export default function RegisterPage() {
           spellCheck={false}
           maxLength={30}
           placeholder={t("auth.usernamePlaceholder")}
+          trailing={<span className="whitespace-nowrap text-[0.8rem] font-semibold text-ink-3">@fitbridge.app</span>}
         />
         <Field
           label={t("auth.password")}

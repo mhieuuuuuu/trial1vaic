@@ -9,6 +9,7 @@ import AIAssistantPage from "./pages/AIAssistantPage";
 import RankingPage from "./pages/RankingPage";
 import ProfilePage from "./pages/ProfilePage";
 import NotFoundPage from "./pages/NotFoundPage";
+import TermsPage from "./pages/TermsPage";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -34,6 +35,7 @@ export default function App() {
         <Route path="/ai-assistant" element={<AIAssistantPage />} />
         <Route path="/ranking" element={<RankingPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/terms" element={<TermsPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </>

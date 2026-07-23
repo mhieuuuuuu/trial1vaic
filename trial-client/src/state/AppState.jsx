@@ -41,6 +41,8 @@ const DEFAULT_PROFILE = {
   bio: "",
   avatarHue: 22,
   avatarUrl: null,
+  score: 0,
+  streak: 0,
   joined: null,
   onboarded: false,
 };
@@ -63,6 +65,8 @@ function rowToProfile(row) {
     bio: row.bio ?? "",
     avatarHue: Number(row.avatar_hue ?? 22),
     avatarUrl: row.avatar_url ?? null,
+    score: Number(row.score ?? 0),
+    streak: Number(row.streak ?? 0),
     joined: row.joined ?? null,
     onboarded: !!row.onboarded,
   };
@@ -84,6 +88,8 @@ function profileToRow(patch) {
     bio: "bio",
     avatarHue: "avatar_hue",
     avatarUrl: "avatar_url",
+    score: "score",
+    streak: "streak",
     joined: "joined",
     onboarded: "onboarded",
   };

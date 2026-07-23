@@ -65,11 +65,11 @@ export function TermsLinks() {
   return (
     <>
       {t("auth.agree")}{" "}
-      <Link to="/onboarding" className="font-semibold text-accent-strong hover:underline">
+      <Link to="/terms#terms" className="font-semibold text-accent-strong hover:underline">
         {t("auth.terms")}
       </Link>{" "}
       {t("auth.and")}{" "}
-      <Link to="/onboarding" className="font-semibold text-accent-strong hover:underline">
+      <Link to="/terms#privacy" className="font-semibold text-accent-strong hover:underline">
         {t("auth.privacy")}
       </Link>
     </>

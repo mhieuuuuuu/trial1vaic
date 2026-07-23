@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { UserPlus, Swords, Share2, Camera, Trophy, Dumbbell, ArrowRight, Activity } from "lucide-react";
 import PageShell from "../components/layout/PageShell";
@@ -9,16 +9,16 @@ import Modal from "../components/ui/Modal";
 import { Ring } from "../components/charts/Charts";
 import BodyHeatmap from "../components/ranking/BodyHeatmap";
 import Leaderboard from "../components/ranking/Leaderboard";
-import { LEADERBOARD, FRIENDS } from "../data/mockData";
 import { exercisesForMuscle, muscleName } from "../data/muscles";
 import { DIFFICULTY_LABEL } from "../data/exercises";
 import { rankScore, tierForScore } from "../lib/fitness";
 import { useI18n } from "../i18n/LanguageContext";
 import { useApp, useStats } from "../state/AppState";
+import { supabase } from "../lib/supabase";
 
 export default function RankingPage() {
   const { t, locale } = useI18n();
-  const { profile } = useApp();
+  const { profile, auth, updateProfile } = useApp();
   const stats = useStats();
   const [board, setBoard] = useState("global");
   const [muscle, setMuscle] = useState("chest");
@@ -26,6 +26,33 @@ export default function RankingPage() {
 
   const myScore = rankScore({ consistency: stats.consistency, intensity: stats.intensity });
   const myTier = tierForScore(myScore).key;
+  const [publicAthletes, setPublicAthletes] = useState([]);
+
+  // Real leaderboard: public profiles from the database — no invented athletes.
+  useEffect(() => {
+    let active = true;
+    supabase
+      .from("profiles")
+      .select("id,name,avatar_hue,avatar_url,score,streak")
+      .eq("metrics_public", true)
+      .order("score", { ascending: false })
+      .limit(50)
+      .then(({ data }) => {
+        if (active && data) setPublicAthletes(data);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // Keep this user's public stats current so others see real numbers.
+  useEffect(() => {
+    if (!auth.signedIn) return;
+    if (profile.score !== myScore || profile.streak !== stats.streak) {
+      updateProfile({ score: myScore, streak: stats.streak });
+    }
+  }, [auth.signedIn, myScore, stats.streak, profile.score, profile.streak, updateProfile]);
 
   const rows = useMemo(() => {
     const you = {
@@ -35,12 +62,26 @@ export default function RankingPage() {
       streak: stats.streak,
       score: myScore,
       hue: profile.avatarHue,
+      avatarUrl: profile.avatarUrl,
       tier: myTier,
       isYou: true,
     };
-    const base = board === "friends" ? FRIENDS : LEADERBOARD;
-    return [...base, you].sort((a, b) => b.score - a.score);
-  }, [board, profile, stats.streak, myScore, myTier, t]);
+    if (board === "friends") return [you];
+    const others = publicAthletes
+      .filter((p) => p.name)
+      .map((p) => ({
+        id: p.id,
+        name: p.name,
+        handle: p.name.toLowerCase().replace(/\s+/g, ""),
+        streak: p.streak || 0,
+        score: p.score || 0,
+        hue: p.avatar_hue ?? 22,
+        avatarUrl: p.avatar_url ?? null,
+        tier: tierForScore(p.score || 0).key,
+      }));
+    const merged = [you, ...others.filter((o) => o.id !== auth.userId)];
+    return merged.sort((a, b) => b.score - a.score);
+  }, [board, profile, stats.streak, myScore, myTier, t, publicAthletes, auth.userId]);
 
   const suggestions = exercisesForMuscle(muscle);
 
