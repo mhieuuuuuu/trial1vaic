@@ -18,6 +18,13 @@ function dateKey(d) {
   return d.toISOString().slice(0, 10);
 }
 
+// FitBridge uses simple username + password. Supabase auth is email-based, so we
+// map a username to a stable synthetic email that never has to be seen or used.
+export function usernameToEmail(username) {
+  const slug = (username || "").trim().toLowerCase().replace(/[^a-z0-9_.]/g, "");
+  return `${slug}@fitbridge.app`;
+}
+
 /* ---------- defaults ---------- */
 
 const DEFAULT_PROFILE = {
@@ -211,22 +218,30 @@ export function AppStateProvider({ children }) {
 
   /* ---------- auth actions ---------- */
 
-  const signUp = useCallback(async (email, password, name) => {
+  const signUp = useCallback(async (username, password) => {
     try {
+      const email = usernameToEmail(username);
+      const name = username.trim();
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { name: name || "" } },
+        options: { data: { name, username: name } },
       });
       if (error) return { error: error.message };
-      return { error: null, needsConfirmation: !data.session };
+      // If the project has email confirmation off, a session is returned and we
+      // proceed. If not, try an immediate sign-in as a fallback.
+      if (data.session) return { error: null };
+      const { error: siErr } = await supabase.auth.signInWithPassword({ email, password });
+      if (siErr) return { error: null, needsConfirmation: true };
+      return { error: null };
     } catch (e) {
       return { error: e?.message || "network" };
     }
   }, []);
 
-  const signIn = useCallback(async (email, password) => {
+  const signIn = useCallback(async (username, password) => {
     try {
+      const email = usernameToEmail(username);
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) return { error: error.message };
       let onboarded = false;
