@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Pencil, Flame, Lock, Eye, Trophy, Ruler, Scale, Target, BarChart3 } from "lucide-react";
+import { useRef, useState } from "react";
+import { Pencil, Flame, Lock, Eye, Trophy, Ruler, Scale, Target, BarChart3, Camera } from "lucide-react";
 import PageShell from "../components/layout/PageShell";
 import Button from "../components/ui/Button";
 import Avatar from "../components/ui/Avatar";
@@ -27,11 +27,29 @@ const LEVEL_LABEL = {
 
 export default function ProfilePage() {
   const { t, locale } = useI18n();
-  const { profile, updateProfile } = useApp();
+  const { profile, updateProfile, uploadAvatar } = useApp();
   const stats = useStats();
 
   const [editOpen, setEditOpen] = useState(false);
   const [draft, setDraft] = useState({ name: profile.name, bio: profile.bio });
+  const [avatarBusy, setAvatarBusy] = useState(false);
+  const [avatarErr, setAvatarErr] = useState("");
+  const fileRef = useRef(null);
+
+  const onPickAvatar = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setAvatarErr("");
+    if (file.size > 4 * 1024 * 1024) {
+      setAvatarErr(t("profile.avatarTooBig"));
+      return;
+    }
+    setAvatarBusy(true);
+    const res = await uploadAvatar(file);
+    setAvatarBusy(false);
+    if (res?.error) setAvatarErr(t("errors.generic"));
+  };
 
   const score = rankScore({ consistency: stats.consistency, intensity: stats.intensity });
   const tier = tierForScore(score).key;
@@ -62,7 +80,19 @@ export default function ProfilePage() {
           <div className="card relative overflow-hidden p-6 sm:p-8">
             <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-accent/10 blur-3xl" />
             <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center">
-              <Avatar name={profile.name} hue={profile.avatarHue} size={88} className="ring-4 ring-surface shadow-mid" />
+              <div className="relative shrink-0 self-start">
+                <Avatar name={profile.name} hue={profile.avatarHue} src={profile.avatarUrl} size={88} className="ring-4 ring-surface shadow-mid" />
+                <button
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                  disabled={avatarBusy}
+                  aria-label={t("profile.changeAvatar")}
+                  className="glow absolute -bottom-1 -right-1 grid h-9 w-9 place-items-center rounded-full border border-line bg-surface text-ink-2 shadow-mid hover:text-ink disabled:opacity-60"
+                >
+                  <Camera className="h-4 w-4" />
+                </button>
+                <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onPickAvatar} />
+              </div>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <h1 className="font-display text-2xl font-extrabold sm:text-3xl">{profile.name || t("common.you")}</h1>
@@ -202,6 +232,13 @@ export default function ProfilePage() {
           </>
         }>
         <div className="space-y-4">
+          <div className="flex items-center gap-4">
+            <Avatar name={profile.name} hue={profile.avatarHue} src={profile.avatarUrl} size={56} />
+            <Button variant="secondary" size="sm" loading={avatarBusy} onClick={() => fileRef.current?.click()} leftIcon={<Camera className="h-4 w-4" />}>
+              {t("profile.changeAvatar")}
+            </Button>
+          </div>
+          {avatarErr && <p role="alert" className="text-[0.82rem] font-medium text-danger">{avatarErr}</p>}
           <Field label={t("auth.name")} value={draft.name} maxLength={40} onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))} />
           <Field label={t("profile.bio")} value={draft.bio} maxLength={120} onChange={(e) => setDraft((d) => ({ ...d, bio: e.target.value }))} />
         </div>

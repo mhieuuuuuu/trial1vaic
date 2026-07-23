@@ -12,7 +12,11 @@ import NotFoundPage from "./pages/NotFoundPage";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
-  useEffect(() => window.scrollTo(0, 0), [pathname]);
+  // Braces matter: a concise arrow would return scrollTo's result to React as an
+  // effect "cleanup", which crashes on browsers where scrollTo returns a value.
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
   return null;
 }
 

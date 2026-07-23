@@ -18,6 +18,13 @@ function dateKey(d) {
   return d.toISOString().slice(0, 10);
 }
 
+// FitBridge uses simple username + password. Supabase auth is email-based, so we
+// map a username to a stable synthetic email that never has to be seen or used.
+export function usernameToEmail(username) {
+  const slug = (username || "").trim().toLowerCase().replace(/[^a-z0-9_.]/g, "");
+  return `${slug}@fitbridge.app`;
+}
+
 /* ---------- defaults ---------- */
 
 const DEFAULT_PROFILE = {
@@ -33,6 +40,7 @@ const DEFAULT_PROFILE = {
   beastMode: true,
   bio: "",
   avatarHue: 22,
+  avatarUrl: null,
   joined: null,
   onboarded: false,
 };
@@ -54,6 +62,7 @@ function rowToProfile(row) {
     beastMode: !!row.beast_mode,
     bio: row.bio ?? "",
     avatarHue: Number(row.avatar_hue ?? 22),
+    avatarUrl: row.avatar_url ?? null,
     joined: row.joined ?? null,
     onboarded: !!row.onboarded,
   };
@@ -74,6 +83,7 @@ function profileToRow(patch) {
     beastMode: "beast_mode",
     bio: "bio",
     avatarHue: "avatar_hue",
+    avatarUrl: "avatar_url",
     joined: "joined",
     onboarded: "onboarded",
   };
@@ -175,13 +185,20 @@ export function AppStateProvider({ children }) {
   useEffect(() => {
     let active = true;
 
-    supabase.auth.getSession().then(({ data }) => {
-      if (!active) return;
-      const sess = data.session ?? null;
-      setSession(sess);
-      if (sess?.user) loadUserData(sess.user.id);
-      setAuthReady(true);
-    });
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (!active) return;
+        const sess = data.session ?? null;
+        setSession(sess);
+        if (sess?.user) loadUserData(sess.user.id);
+      })
+      .catch(() => {
+        /* offline / init failure — proceed as signed-out */
+      })
+      .finally(() => {
+        if (active) setAuthReady(true);
+      });
 
     const {
       data: { subscription },
@@ -204,29 +221,55 @@ export function AppStateProvider({ children }) {
 
   /* ---------- auth actions ---------- */
 
-  const signUp = useCallback(async (email, password, name) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { name: name || "" } },
-    });
-    if (error) return { error: error.message };
-    return { error: null, needsConfirmation: !data.session };
+  const signUp = useCallback(async (username, password) => {
+    try {
+      const email = usernameToEmail(username);
+      const name = username.trim();
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { name, username: name } },
+      });
+      if (error) return { error: error.message };
+      // If the project has email confirmation off, a session is returned and we
+      // proceed. If not, try an immediate sign-in as a fallback.
+      if (data.session) return { error: null };
+      const { error: siErr } = await supabase.auth.signInWithPassword({ email, password });
+      if (siErr) return { error: null, needsConfirmation: true };
+      return { error: null };
+    } catch (e) {
+      return { error: e?.message || "network" };
+    }
   }, []);
 
-  const signIn = useCallback(async (email, password) => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) return { error: error.message };
-    const { data: prof } = await supabase
-      .from("profiles")
-      .select("onboarded")
-      .eq("id", data.user.id)
-      .maybeSingle();
-    return { error: null, onboarded: !!prof?.onboarded };
+  const signIn = useCallback(async (username, password) => {
+    try {
+      const email = usernameToEmail(username);
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) return { error: error.message };
+      let onboarded = false;
+      try {
+        const { data: prof } = await supabase
+          .from("profiles")
+          .select("onboarded")
+          .eq("id", data.user.id)
+          .maybeSingle();
+        onboarded = !!prof?.onboarded;
+      } catch {
+        /* profile read failed — treat as not onboarded, page will recover */
+      }
+      return { error: null, onboarded };
+    } catch (e) {
+      return { error: e?.message || "network" };
+    }
   }, []);
 
   const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      /* ignore */
+    }
     clearUserData();
   }, [clearUserData]);
 
@@ -273,6 +316,31 @@ export function AppStateProvider({ children }) {
       const uid = session?.user?.id;
       if (!uid) return;
       await supabase.from("profiles").update(profileToRow(patch)).eq("id", uid);
+    },
+    [session]
+  );
+
+  const uploadAvatar = useCallback(
+    async (file) => {
+      const uid = session?.user?.id;
+      if (!uid || !file) return { error: "not-signed-in" };
+      try {
+        const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+        const path = `${uid}/avatar-${Date.now()}.${ext}`;
+        const { error: upErr } = await supabase.storage
+          .from("avatars")
+          .upload(path, file, { upsert: true, contentType: file.type || "image/jpeg" });
+        if (upErr) return { error: upErr.message };
+        const { data } = supabase.storage.from("avatars").getPublicUrl(path);
+        const url = data?.publicUrl ?? null;
+        if (url) {
+          setProfile((p) => ({ ...p, avatarUrl: url }));
+          await supabase.from("profiles").update({ avatar_url: url }).eq("id", uid);
+        }
+        return { error: null, url };
+      } catch (e) {
+        return { error: e?.message || "upload-failed" };
+      }
     },
     [session]
   );
@@ -370,6 +438,7 @@ export function AppStateProvider({ children }) {
       signOut,
       completeOnboarding,
       updateProfile,
+      uploadAvatar,
       addWorkout,
       updateWeight,
       dismissCheckin,
@@ -388,6 +457,7 @@ export function AppStateProvider({ children }) {
       signOut,
       completeOnboarding,
       updateProfile,
+      uploadAvatar,
       addWorkout,
       updateWeight,
       dismissCheckin,
