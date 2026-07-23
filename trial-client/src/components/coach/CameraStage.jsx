@@ -50,7 +50,7 @@ export default function CameraStage({ exercise, beastMode, onEnd }) {
 
   return (
     <div>
-      <div className="relative aspect-video w-full overflow-hidden rounded-3xl border border-line bg-ink">
+      <div className="relative aspect-video w-full overflow-hidden rounded-3xl border border-line-strong bg-[#0d0d0d]">
         <video ref={videoRef} className="hidden" playsInline muted />
         <canvas
           ref={canvasRef}
@@ -69,13 +69,16 @@ export default function CameraStage({ exercise, beastMode, onEnd }) {
               </span>
               <p className="mt-4 text-lg font-bold text-white">{t("coach.cameraIdle")}</p>
               <p className="mx-auto mt-1.5 max-w-xs text-[0.88rem] text-white/60">{t("coach.cameraIdleBody")}</p>
+              <Button size="lg" className="mt-5" onClick={pose.start}>
+                {t("coach.startSession")}
+              </Button>
             </div>
           </div>
         )}
 
         {/* Loading */}
         {status === "loading" && (
-          <div className="absolute inset-0 grid place-items-center bg-ink/80 text-center">
+          <div className="absolute inset-0 grid place-items-center bg-black/75 text-center">
             <div>
               <Loader2 className="mx-auto h-8 w-8 animate-spin text-accent" />
               <p className="mt-3 text-[0.9rem] font-semibold text-white/80">{t("coach.loadingModel")}</p>
