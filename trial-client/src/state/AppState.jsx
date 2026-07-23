@@ -175,13 +175,20 @@ export function AppStateProvider({ children }) {
   useEffect(() => {
     let active = true;
 
-    supabase.auth.getSession().then(({ data }) => {
-      if (!active) return;
-      const sess = data.session ?? null;
-      setSession(sess);
-      if (sess?.user) loadUserData(sess.user.id);
-      setAuthReady(true);
-    });
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (!active) return;
+        const sess = data.session ?? null;
+        setSession(sess);
+        if (sess?.user) loadUserData(sess.user.id);
+      })
+      .catch(() => {
+        /* offline / init failure — proceed as signed-out */
+      })
+      .finally(() => {
+        if (active) setAuthReady(true);
+      });
 
     const {
       data: { subscription },
@@ -205,28 +212,46 @@ export function AppStateProvider({ children }) {
   /* ---------- auth actions ---------- */
 
   const signUp = useCallback(async (email, password, name) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { name: name || "" } },
-    });
-    if (error) return { error: error.message };
-    return { error: null, needsConfirmation: !data.session };
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { name: name || "" } },
+      });
+      if (error) return { error: error.message };
+      return { error: null, needsConfirmation: !data.session };
+    } catch (e) {
+      return { error: e?.message || "network" };
+    }
   }, []);
 
   const signIn = useCallback(async (email, password) => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) return { error: error.message };
-    const { data: prof } = await supabase
-      .from("profiles")
-      .select("onboarded")
-      .eq("id", data.user.id)
-      .maybeSingle();
-    return { error: null, onboarded: !!prof?.onboarded };
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) return { error: error.message };
+      let onboarded = false;
+      try {
+        const { data: prof } = await supabase
+          .from("profiles")
+          .select("onboarded")
+          .eq("id", data.user.id)
+          .maybeSingle();
+        onboarded = !!prof?.onboarded;
+      } catch {
+        /* profile read failed — treat as not onboarded, page will recover */
+      }
+      return { error: null, onboarded };
+    } catch (e) {
+      return { error: e?.message || "network" };
+    }
   }, []);
 
   const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      /* ignore */
+    }
     clearUserData();
   }, [clearUserData]);
 
