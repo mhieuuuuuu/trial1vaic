@@ -61,6 +61,19 @@ Design plan approved. Working dark-first, Strava-style, pushing per screen.
 - **Home** — hero rebuilt around the pose-skeleton camera-proof signature
   (TRACKING / reps / live-form / joint-angle chips). Kills the banned centered hero.
 
+### Round 2 — expressive layer (done + pushed)
+- **Real data, not fake** — removed the seeded year of demo workouts; app now shows
+  only real logged sessions (empty states cover new accounts).
+- **Interactive 3D** — the hero pose-skeleton is now a real orbitable 3D figure
+  (drag to spin, inertia, idle auto-rotate, pauses off-screen / reduced-motion).
+  Pure SVG + math, no WebGL, so it stays crisp and un-AI-looking.
+- **Papercut / Vox band** — "how it works" rebuilt as a warm pasted-paper editorial
+  insert with layered cut-paper step cards; added `--paper-*` + radius tokens.
+
+> Higgsfield + Motion connectors both have **0 credits**, so no AI media was
+> generated (would require a paid top-up). Everything above is hand-built, which
+> also better serves the "don't look too AI" goal.
+
 ### Remaining screens (next)
 - App shell: Strava-style **bottom tab bar** (mobile).
 - Dashboard → **activity feed** with workout cards (distance/pace/time, kudos,
