@@ -88,7 +88,7 @@ export default function Navbar() {
                 {t("dashboard.startWorkout")}
               </Button>
               <NavLink to="/profile" className="glow hidden rounded-full sm:inline-flex" aria-label={t("nav.profile")}>
-                <Avatar name={profile.name} hue={profile.avatarHue} size={38} />
+                <Avatar name={profile.name} hue={profile.avatarHue} src={profile.avatarUrl} size={38} />
               </NavLink>
             </>
           ) : (

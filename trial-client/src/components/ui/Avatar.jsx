@@ -1,4 +1,8 @@
-export default function Avatar({ name = "", hue = 22, size = 40, className = "" }) {
+import { useState } from "react";
+
+/** User avatar: uploaded photo when available, gradient initials otherwise. */
+export default function Avatar({ name = "", hue = 22, size = 40, src = null, className = "" }) {
+  const [imgOk, setImgOk] = useState(true);
   const initials =
     name
       .trim()
@@ -7,6 +11,20 @@ export default function Avatar({ name = "", hue = 22, size = 40, className = "" 
       .map((w) => w[0])
       .join("")
       .toUpperCase() || "★";
+
+  if (src && imgOk) {
+    return (
+      <img
+        src={src}
+        alt=""
+        onError={() => setImgOk(false)}
+        className={`inline-block shrink-0 rounded-full object-cover ${className}`}
+        style={{ width: size, height: size }}
+        aria-hidden="true"
+      />
+    );
+  }
+
   return (
     <span
       className={`inline-grid shrink-0 place-items-center rounded-full font-bold text-white ${className}`}

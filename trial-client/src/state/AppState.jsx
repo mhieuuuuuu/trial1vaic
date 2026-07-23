@@ -40,6 +40,7 @@ const DEFAULT_PROFILE = {
   beastMode: true,
   bio: "",
   avatarHue: 22,
+  avatarUrl: null,
   joined: null,
   onboarded: false,
 };
@@ -61,6 +62,7 @@ function rowToProfile(row) {
     beastMode: !!row.beast_mode,
     bio: row.bio ?? "",
     avatarHue: Number(row.avatar_hue ?? 22),
+    avatarUrl: row.avatar_url ?? null,
     joined: row.joined ?? null,
     onboarded: !!row.onboarded,
   };
@@ -81,6 +83,7 @@ function profileToRow(patch) {
     beastMode: "beast_mode",
     bio: "bio",
     avatarHue: "avatar_hue",
+    avatarUrl: "avatar_url",
     joined: "joined",
     onboarded: "onboarded",
   };
@@ -317,6 +320,31 @@ export function AppStateProvider({ children }) {
     [session]
   );
 
+  const uploadAvatar = useCallback(
+    async (file) => {
+      const uid = session?.user?.id;
+      if (!uid || !file) return { error: "not-signed-in" };
+      try {
+        const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+        const path = `${uid}/avatar-${Date.now()}.${ext}`;
+        const { error: upErr } = await supabase.storage
+          .from("avatars")
+          .upload(path, file, { upsert: true, contentType: file.type || "image/jpeg" });
+        if (upErr) return { error: upErr.message };
+        const { data } = supabase.storage.from("avatars").getPublicUrl(path);
+        const url = data?.publicUrl ?? null;
+        if (url) {
+          setProfile((p) => ({ ...p, avatarUrl: url }));
+          await supabase.from("profiles").update({ avatar_url: url }).eq("id", uid);
+        }
+        return { error: null, url };
+      } catch (e) {
+        return { error: e?.message || "upload-failed" };
+      }
+    },
+    [session]
+  );
+
   const addWorkout = useCallback(
     async (entry) => {
       const uid = session?.user?.id;
@@ -410,6 +438,7 @@ export function AppStateProvider({ children }) {
       signOut,
       completeOnboarding,
       updateProfile,
+      uploadAvatar,
       addWorkout,
       updateWeight,
       dismissCheckin,
@@ -428,6 +457,7 @@ export function AppStateProvider({ children }) {
       signOut,
       completeOnboarding,
       updateProfile,
+      uploadAvatar,
       addWorkout,
       updateWeight,
       dismissCheckin,

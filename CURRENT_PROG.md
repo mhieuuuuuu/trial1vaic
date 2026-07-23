@@ -80,6 +80,20 @@ Design plan approved. Working dark-first, Strava-style, pushing per screen.
   muscle-map thumbnails).
 - Auth pages / onboarding polish · AI Coach · Profile · Ranking layout.
 
+### Round 3 — crash root-caused + user requests (done + pushed)
+- **Crash fixed for real.** The production "l is not a function" was ScrollToTop's
+  `useEffect(() => window.scrollTo(0,0), ...)` returning scrollTo's result to React
+  as a cleanup — fatal on browsers where scrollTo returns a value. Reproduced by
+  stubbing scrollTo, fixed with braces, verified old-crashes/new-survives.
+  Production sourcemaps enabled.
+- **Username-only auth** (no email anywhere), animated **multi-exercise stickman**
+  (squat / push-up / bicep curl with dumbbells, real rep counter, drag-to-orbit),
+  **real-video demo slot** (`public/media/demo-pushups.mp4`, frame fits the video),
+  hero stats row removed (no fake-looking numbers), TalkBridge-style logo pill +
+  bigger nav logo, Features/How-it-works nav links, warmer non-glare light mode,
+  natural Vietnamese copy, **avatar upload** (Supabase storage bucket + RLS,
+  camera button on profile + edit modal).
+
 ### Blocked on you (needed to fully verify + finish)
 1. **Deploy the current branch to Vercel and confirm sign-in works** — this is the
    one thing I can't test here (sandbox blocks outbound to Supabase).
