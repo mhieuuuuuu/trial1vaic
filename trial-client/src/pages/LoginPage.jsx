@@ -71,6 +71,7 @@ export default function LoginPage() {
           error={errors.username}
           onChange={(e) => setUsername(e.target.value)}
           placeholder={t("auth.usernamePlaceholder")}
+          trailing={<span className="whitespace-nowrap text-[0.8rem] font-semibold text-ink-3">@fitbridge.app</span>}
         />
         <Field
           label={t("auth.password")}
@@ -86,15 +87,10 @@ export default function LoginPage() {
             </button>
           }
         />
-        <div className="flex items-center justify-between text-[0.85rem]">
-          <label className="flex cursor-pointer items-center gap-2 text-ink-2">
-            <input type="checkbox" className="h-4 w-4 rounded" style={{ accentColor: "var(--accent)" }} />
-            {t("auth.remember")}
-          </label>
-          <Link to="/login" className="font-semibold text-accent-strong hover:underline">
-            {t("auth.forgot")}
-          </Link>
-        </div>
+        <label className="flex cursor-pointer items-center gap-2 text-[0.85rem] text-ink-2">
+          <input type="checkbox" className="h-4 w-4 rounded" style={{ accentColor: "var(--accent)" }} />
+          {t("auth.remember")}
+        </label>
         <Button type="submit" className="w-full" size="lg" loading={busy}>
           {busy ? t("auth.signingIn") : t("nav.signIn")}
         </Button>

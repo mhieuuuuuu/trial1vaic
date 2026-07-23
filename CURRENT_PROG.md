@@ -94,6 +94,52 @@ Design plan approved. Working dark-first, Strava-style, pushing per screen.
   natural Vietnamese copy, **avatar upload** (Supabase storage bucket + RLS,
   camera button on profile + edit modal).
 
+### Round 4 — bug fixes + fake-data purge (done + pushed)
+- Stickman animates on ALL machines (reduced-motion now only stops auto-rotation
+  — this was why Windows/Alienware saw it frozen). Chips can no longer stretch.
+- Demo-video section always visible (elegant placeholder until the file exists).
+- Real /terms page (EN/VI); register links go there — loophole closed.
+- Forgot-password removed; @fitbridge.app shown as a fixed suffix on username
+  fields; professional placeholders.
+- Fake data fully purged: leaderboard = real public profiles from the DB only
+  (score/streak persisted, migration 0004); mockData.js deleted; achievements
+  computed from real workouts incl. per-exercise clean-form badges.
+- Profile right-column overflow fixed for scaled laptop displays.
+
+---
+
+## ROADMAP — big features queued for next sessions (user-approved direction)
+
+Work top-to-bottom; each item ends with commit + push + this file updated.
+
+1. **Coach session UX + AI summary** (user's top complaint)
+   - Replace the white flash when the camera starts with a dark stage +
+     "Bắt đầu bài tập" overlay button; camera only starts after pressing it.
+   - Save every finished session to Supabase (already wired via addWorkout) and
+     show an end-of-session AI-style summary (form breakdown per rep from the
+     existing usePoseDetection angle data; no external paid API needed —
+     summarize locally, optionally later a free LLM endpoint).
+   - **Sequence builder**: let the user queue exercises (e.g. push-up ×12 →
+     squat ×15 → plank 40s), then the session runs the queue automatically.
+2. **Strava-style social layer** (schema next session):
+   - `posts` table (user, workout ref, caption, visibility) + `kudos` +
+     `follows`; feed page = real posts from followed users; share-progress
+     posts from the profile. RLS mirrors profiles.metrics_public.
+   - Run tracking (GPS w/ geolocation API, route map, distance/pace) as a new
+     exercise type.
+3. **Nutrition tracking**: meals table (photo, kcal estimate), daily 3-meal log,
+   calendar + reminders (Notification API), progress charts. Photo→calorie
+   needs a vision API — pick a free tier (e.g. OpenRouter free vision model)
+   and keep the key server-side (Supabase Edge Function).
+4. **Body map v2**: continuous human silhouette (single outline, muscles as
+   clipped regions inside it) so it reads as one person, front/back.
+5. **Cluely-style interactive compare slider** on the landing page: two meeting
+   photos (user will supply), drag divider, bilingual positive bubble matching
+   the chosen locale. Keep the existing Sarah/Minh conversation.
+6. **Luxury polish pass**: glass morphing transitions between routes, magnified
+   dock-style bottom nav on mobile, refined hover ring on every control
+   (already tokenized), light/dark audit at 125% Windows scaling.
+
 ### Blocked on you (needed to fully verify + finish)
 1. **Deploy the current branch to Vercel and confirm sign-in works** — this is the
    one thing I can't test here (sandbox blocks outbound to Supabase).

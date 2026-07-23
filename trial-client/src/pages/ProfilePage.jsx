@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Pencil, Flame, Lock, Eye, Trophy, Ruler, Scale, Target, BarChart3, Camera } from "lucide-react";
+import { Pencil, Flame, Lock, Eye, Trophy, Ruler, Scale, Target, BarChart3, Camera, Sparkles, BadgeCheck } from "lucide-react";
 import PageShell from "../components/layout/PageShell";
 import Button from "../components/ui/Button";
 import Avatar from "../components/ui/Avatar";
@@ -9,10 +9,12 @@ import Modal from "../components/ui/Modal";
 import StatusChip from "../components/ui/StatusChip";
 import ContributionGraph from "../components/profile/ContributionGraph";
 import ActivityRow from "../components/workout/ActivityRow";
-import { ACHIEVEMENTS, FRIENDS } from "../data/mockData";
+import { computeAchievements } from "../lib/achievements";
 import { bmi, bmiBand, rankScore, tierForScore } from "../lib/fitness";
 import { useI18n } from "../i18n/LanguageContext";
 import { useApp, useStats } from "../state/AppState";
+
+const ACH_ICONS = { Sparkles, BadgeCheck, Flame, Trophy };
 
 const GOAL_LABEL = {
   cutting: { en: "Cutting", vi: "Giảm mỡ" },
@@ -27,7 +29,7 @@ const LEVEL_LABEL = {
 
 export default function ProfilePage() {
   const { t, locale } = useI18n();
-  const { profile, updateProfile, uploadAvatar } = useApp();
+  const { profile, updateProfile, uploadAvatar, workouts } = useApp();
   const stats = useStats();
 
   const [editOpen, setEditOpen] = useState(false);
@@ -52,6 +54,7 @@ export default function ProfilePage() {
   };
 
   const score = rankScore({ consistency: stats.consistency, intensity: stats.intensity });
+  const achievements = computeAchievements({ workouts, stats });
   const tier = tierForScore(score).key;
   const myBmi = bmi(profile.weight, profile.height);
   const band = bmiBand(myBmi);
@@ -114,14 +117,14 @@ export default function ProfilePage() {
             <div className="relative mt-6 grid grid-cols-3 gap-3">
               <QuickStat value={stats.totalWorkouts} label={t("profile.workouts")} />
               <QuickStat value={stats.streak} label={t("profile.currentStreak")} icon={<Flame className="h-4 w-4 text-accent-strong" />} />
-              <QuickStat value={FRIENDS.length} label={t("profile.following")} />
+              <QuickStat value={stats.weekCalories} label={t("dashboard.caloriesWeek")} />
             </div>
           </div>
         </Reveal>
 
-        <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_20rem]">
+        <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,19rem)]">
           {/* Left: contribution + recent */}
-          <div className="grid content-start gap-5">
+          <div className="grid min-w-0 content-start gap-5">
             <Reveal>
               <div className="card p-6">
                 <h2 className="font-bold">{t("profile.contributionTitle")}</h2>
@@ -148,7 +151,7 @@ export default function ProfilePage() {
           </div>
 
           {/* Right: metrics + achievements */}
-          <div className="grid content-start gap-5">
+          <div className="grid min-w-0 content-start gap-5">
             <Reveal>
               <div className="card p-6">
                 <div className="mb-3 flex items-center justify-between gap-2">
@@ -209,13 +212,24 @@ export default function ProfilePage() {
             <Reveal delay={80}>
               <div className="card p-6">
                 <h2 className="mb-4 font-bold">{t("profile.achievementsTitle")}</h2>
-                <div className="grid grid-cols-3 gap-3">
-                  {ACHIEVEMENTS.map((a) => (
-                    <div key={a.id} className="flex flex-col items-center gap-1.5 rounded-2xl bg-sunken p-3 text-center">
-                      <span className="text-2xl">{a.icon}</span>
-                      <span className="text-[0.7rem] font-semibold leading-tight text-ink-2">{a.name[locale]}</span>
-                    </div>
-                  ))}
+                <div className="grid grid-cols-2 gap-3">
+                  {achievements.map((a) => {
+                    const Icon = ACH_ICONS[a.icon] || Trophy;
+                    return (
+                      <div
+                        key={a.id}
+                        title={a.desc[locale]}
+                        className={`flex flex-col items-center gap-1.5 rounded-2xl p-3 text-center ${
+                          a.unlocked ? "bg-accent-surface" : "bg-sunken opacity-55"
+                        }`}
+                      >
+                        <span className={`grid h-9 w-9 place-items-center rounded-full ${a.unlocked ? "bg-accent-strong text-accent-contrast" : "bg-surface text-ink-3"}`}>
+                          {a.unlocked ? <Icon className="h-4.5 w-4.5" /> : <Lock className="h-4 w-4" />}
+                        </span>
+                        <span className="text-[0.7rem] font-semibold leading-tight text-ink-2">{a.name[locale]}</span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </Reveal>

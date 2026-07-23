@@ -158,6 +158,7 @@ export default function PoseProof({ className = "" }) {
       lastTs.current = ts;
       timeRef.current += dt;
       if (!dragging.current) {
+        // reduced-motion only stops the idle auto-rotation, never the exercise
         angle.current += vel.current + (reduced ? 0 : 0.0035);
         vel.current *= 0.94;
       }
@@ -176,7 +177,7 @@ export default function PoseProof({ className = "" }) {
 
   useEffect(() => {
     const start = () => {
-      if (!raf.current && !reduced) {
+      if (!raf.current) {
         lastTs.current = 0;
         raf.current = requestAnimationFrame(tick);
       }
@@ -196,8 +197,7 @@ export default function PoseProof({ className = "" }) {
     if (wrapRef.current) io.observe(wrapRef.current);
     const onVis = () => (document.hidden || !visible.current ? stop() : start());
     document.addEventListener("visibilitychange", onVis);
-    if (reduced) force(1);
-    else start();
+    start();
     return () => {
       io.disconnect();
       document.removeEventListener("visibilitychange", onVis);
@@ -229,7 +229,7 @@ export default function PoseProof({ className = "" }) {
   const onUp = () => (dragging.current = false);
 
   const cfg = EXERCISE_POSES[exercise];
-  const phase = reduced ? 0.4 : repPhase(timeRef.current, cfg.speed);
+  const phase = repPhase(timeRef.current, cfg.speed);
   const pose = lerpPose(cfg.A, cfg.B, phase);
   const cos = Math.cos(angle.current);
   const sin = Math.sin(angle.current);
@@ -308,15 +308,15 @@ export default function PoseProof({ className = "" }) {
         </svg>
 
         {/* status chips */}
-        <div className="glass pointer-events-none absolute left-4 top-4 flex items-center gap-2 rounded-full px-3 py-1.5">
-          <span className="h-2 w-2 animate-pulse-ring rounded-full bg-accent" />
+        <div className="glass pointer-events-none absolute left-4 top-4 flex w-max items-center gap-2 whitespace-nowrap rounded-full px-3 py-1.5">
+          <span className="h-2 w-2 shrink-0 animate-pulse-ring rounded-full bg-accent" style={{ borderRadius: "999px" }} />
           <span className="text-[0.72rem] font-bold uppercase tracking-wider text-ink">{t("coach.tracking")}</span>
         </div>
         <div className="glass pointer-events-none absolute right-4 top-4 rounded-2xl px-3.5 py-2 text-right">
           <div className="font-mono text-2xl font-bold leading-none text-accent">{repsRef.current}</div>
           <div className="mt-0.5 text-[0.62rem] font-semibold uppercase tracking-wider text-ink-2">{t("coach.reps")}</div>
         </div>
-        <div className="glass pointer-events-none absolute bottom-16 right-4 flex items-center gap-1.5 rounded-full px-3 py-1.5">
+        <div className="glass pointer-events-none absolute bottom-16 right-4 flex w-max items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5">
           <DragIcon />
           <span className="text-[0.66rem] font-semibold uppercase tracking-wider text-ink-2">{t("home.dragHint")}</span>
         </div>

@@ -13,7 +13,6 @@ import { useI18n } from "../i18n/LanguageContext";
 function DemoVideo() {
   const { t } = useI18n();
   const [available, setAvailable] = useState(true);
-  if (!available) return null;
   return (
     <section className="mx-auto max-w-5xl px-5 py-10">
       <Reveal>
@@ -22,14 +21,28 @@ function DemoVideo() {
       </Reveal>
       <Reveal delay={80}>
         <figure className="mt-6 overflow-hidden rounded-[var(--r-xl)] border border-line-strong bg-black shadow-float">
-          <video
-            className="block h-auto w-full"
-            src="/media/demo-pushups.mp4"
-            controls
-            playsInline
-            preload="metadata"
-            onError={() => setAvailable(false)}
-          />
+          {available ? (
+            <video
+              className="block h-auto w-full"
+              src="/media/demo-pushups.mp4"
+              controls
+              playsInline
+              preload="metadata"
+              onError={() => setAvailable(false)}
+            />
+          ) : (
+            /* Elegant placeholder frame until the real footage is dropped in */
+            <div className="relative grid aspect-video w-full place-items-center bg-[#0d0d0d]">
+              <div className="pointer-events-none absolute inset-0 bg-accent/10 blur-[80px]" aria-hidden="true" />
+              <div className="relative text-center">
+                <span className="glass mx-auto grid h-16 w-16 place-items-center rounded-full">
+                  <Camera className="h-7 w-7 text-accent" />
+                </span>
+                <p className="mt-4 font-display text-lg font-extrabold text-white">{t("home.demoSoon")}</p>
+                <p className="mt-1 text-[0.85rem] text-white/50">{t("home.demoSoonBody")}</p>
+              </div>
+            </div>
+          )}
         </figure>
       </Reveal>
     </section>

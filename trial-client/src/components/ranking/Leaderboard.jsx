@@ -16,7 +16,7 @@ export default function Leaderboard({ rows }) {
           <span className="grid w-7 shrink-0 place-items-center font-display text-sm font-extrabold">
             {i < 3 ? <Crown className="h-5 w-5" style={{ color: MEDAL[i] }} /> : <span className="text-ink-3">{i + 1}</span>}
           </span>
-          <Avatar name={r.name} hue={r.hue} size={40} />
+          <Avatar name={r.name} hue={r.hue} src={r.avatarUrl} size={40} />
           <div className="min-w-0 flex-1">
             <p className="truncate font-semibold text-ink">
               {r.name} {r.isYou && <span className="text-accent-strong">· {t("common.you")}</span>}
